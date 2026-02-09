@@ -1,157 +1,2052 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>BRM Finance</title>
-
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body{
-      font-family: Arial, sans-serif;
-      margin:0;
-      background:#f1f5f9;
-    }
-
-    header{
-      background:#2563eb;
-      color:white;
-      padding:15px;
-      text-align:center;
-      font-size:20px;
-    }
-
-    .box{
-      background:white;
-      margin:15px;
-      padding:15px;
-      border-radius:10px;
-    }
-
-    button{
-      width:100%;
-      padding:12px;
-      margin:5px 0;
-      border:none;
-      border-radius:6px;
-      background:#2563eb;
-      color:white;
-      font-size:16px;
-    }
-
-    button:active{
-      opacity:0.8;
-    }
-  </style>
-</head>
-
-<body>
-
-<header>BRM Finance App</header>
-
-<div class="box">
-
-  <button onclick="exportPDF()">Export PDF</button>
-  <button onclick="exportExcel()">Export Excel</button>
-  <button onclick="showChart()">Show Chart</button>
-
-  <div id="chartBox"></div>
-
-</div>
-
+<meta charset="UTF-8">
+<title>Believers Revival Ministry – Finance App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
 
 <!-- Libraries -->
+
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/jspdf.umd.min.js"></script>
 <script src="libs/jspdf.plugin.autotable.min.js"></script>
 <script src="libs/FileSaver.min.js"></script>
 <script src="libs/chart.min.js"></script>
 
+<!-- Styles -->
+<style>
+:root{
+  --primary:#4f46e5;
+  --accent:#22c55e;
+  --bg:#020617;
+  --card:#0f172a;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --income:#22c55e;
+  --expense:#ef4444;
+}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
+  line-height:1.6;
+  letter-spacing:.2px;
+  background: var(--bg);
+  color:var(--text);
+}
+
+p{color:var(--muted)}
+label{font-size:13px;font-weight:600;color:var(--muted)}
+
+*{box-sizing:border-box}
+
+/* Pages */
+.page{display:none;padding:16px;animation:fadeUp .6s ease forwards;}
+.page.active{display:block;}
+
+/* Cards */
+.card{
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding:18px;
+  margin-bottom:16px;
+  border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);
+  transition:transform .3s, box-shadow .3s;
+}
+
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 40px rgba(79,70,229,.4);
+}
+
+/* Headings */
+h2,h3,h4{margin:6px 0 12px;font-weight:700;}
+
+/* Buttons */
+
+button{
+  padding:14px 16px;
+  border:none;
+  border-radius:999px;
+  font-weight:600;
+  font-size:15px;
+  cursor:pointer;
+
+  background:linear-gradient(135deg,var(--primary),#6366f1);
+  color:#fff;
+
+  box-shadow:0 10px 30px rgba(79,70,229,.4);
+
+  transition:transform .25s, box-shadow .25s;
+}
+
+button:hover{
+  transform:translateY(-2px) scale(1.03);
+  box-shadow:0 16px 35px rgba(79,70,229,.6);
+}
+
+button.full{
+  width:100%;
+  margin-bottom:12px;
+}
+
+/* Secondary (Back / Cancel) */
+button.secondary{
+  background:linear-gradient(135deg,#334155,#1e293b);
+}
+
+/* Danger (Delete / Reset) */
+button.danger{
+  background:linear-gradient(135deg,#dc2626,#991b1b);
+}
+
+/* Info (Reports / Summary) */
+button.info{
+  background:linear-gradient(135deg,#0ea5e9,#0284c7);
+}
+
+/* Inputs */
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--muted);
+  background: var(--card);
+  color: var(--text);
+  margin-bottom:12px;
+}
+
+input::placeholder{
+  color: var(--muted);
+}
+
+input:focus,select:focus{
+  outline:none;
+  border-color: var(--primary);
+  box-shadow: 0 0 4px rgba(37,99,235,.4);
+}
+
+input,select{
+  background: var(--card);
+  color: var(--text);
+  border:1px solid var(--muted);
+}
+
+body[data-theme="light"] input,
+body[data-theme="light"] select{
+  border:1px solid #d1d5db;
+}
+
+/* Badges */
+.badge{
+  padding:4px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+}
+.badge.income{
+  background:rgba(34,197,94,.15);
+  color:var(--income);
+}
+.badge.expense{
+  background:rgba(239,68,68,.15);
+  color:var(--expense);
+}
+
+/* Layout helpers */
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.search-row{display:flex;gap:8px;margin-bottom:12px;}
+
+/* Pagination */
+.pagination{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* Footer */
+footer{text-align:center;font-size:15px;padding:16px;color:var(--muted);}
+
+/* Animations */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Print */
+@media print{
+  body{background:white;color:black;}
+  button,input,select{display:none;}
+  .card{box-shadow:none;border:none;}
+}
+
+/* Particles */
+#particles {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--bg);
+  min-height: 100vh;
+}
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--text);
+  border-radius: 50%;
+  box-shadow:
+    0 0 8px rgba(255,255,255,1),
+    0 0 16px rgba(255,255,255,0.9),
+    0 0 32px rgba(255,255,255,0.6);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* Fixed Back Button */
+.fixed-back-btn{
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 500px;
+  z-index: 1000;
+}
+
+/* Spacer */
+.bottom-spacer{height: 90px;}
+#transactionList{will-change: transform;}
+</style>
+</head>
 
 <script>
-
-/* Sample Data */
-let data = [
-  {date:"2026-02-01", name:"Offering", amount:5000, type:"Income"},
-  {date:"2026-02-02", name:"Tithe", amount:3000, type:"Income"},
-  {date:"2026-02-03", name:"Electricity", amount:1500, type:"Expense"}
-];
-
-
-/* PDF */
-function exportPDF(){
-
-  const { jsPDF } = window.jspdf;
-
-  let doc = new jsPDF();
-
-  doc.text("BRM Finance Report", 14, 15);
-
-  let rows = data.map(d=>[
-    d.date,d.name,d.amount,d.type
-  ]);
-
-  doc.autoTable({
-    head:[["Date","Name","Amount","Type"]],
-    body:rows,
-    startY:25
-  });
-
-  doc.save("report.pdf");
-}
-
-
-/* Excel */
-function exportExcel(){
-
-  let ws = XLSX.utils.json_to_sheet(data);
-
-  let wb = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(wb, ws,"Report");
-
-  XLSX.writeFile(wb,"report.xlsx");
-}
-
-
-/* Chart */
-function showChart(){
-
-  let income = 0;
-  let expense = 0;
-
-  data.forEach(d=>{
-    if(d.type==="Income") income+=d.amount;
-    else expense+=d.amount;
-  });
-
-  document.getElementById("chartBox").innerHTML =
-    `<canvas id="chart"></canvas>`;
-
-  let ctx = document.getElementById("chart");
-
-  new Chart(ctx,{
-    type:"pie",
-    data:{
-      labels:["Income","Expense"],
-      datasets:[{
-        data:[income,expense]
-      }]
-    }
-  });
-
-}
-
-
-/* Service Worker */
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js");
 }
-
 </script>
 
+<body>
+<!-- Fixed Back Button -->
+<button id="globalBackBtn" class="secondary full fixed-back-btn" onclick="goHome()" style="display:none">Back to Home</button>
+
+<!-- Particles -->
+<div id="particles"></div>
+
+<!-- HOME -->
+<div id="home" class="page active">
+  <div class="card">
+    <h2>Believers Revival Ministry</h2>
+    <p>Record, manage and report church finances accurately.</p>
+  </div>
+  <button class="primary full" onclick="openPage('transactions')">Record Transaction</button>
+  <button class="primary full" onclick="openPage('reports')">View Reports</button>
+  <button class="primary full" onclick="openPage('charts')">View Charts</button>
+  <button class="primary full" onclick="openPage('backup')">Backup & Restore</button>
+  <button class="primary full" onclick="openPage('settings')">Settings</button>
+  <button class="primary full" onclick="openPage('help')">Help</button>
+  <footer>"Let all things be done decently and in order" (1Cor 14:40)</footer>
+</div>
+
+<!-- TRANSACTIONS -->
+<div id="transactions" class="page">
+  <button class="secondary full" onclick="goHome()">Back to Home</button>
+  <div class="card">
+    <h3 id="formTitle">Add Transaction</h3>
+    <label>Type</label>
+    <select id="type">
+      <option>Income</option>
+      <option>Expense</option>
+    </select>
+    <label>Category</label>
+    <select id="category"></select>
+    <label>Amount (KES)</label>
+    <input id="amount" type="number" min="1">
+    <label>Date</label>
+    <input id="date" type="date">
+    <label>Note</label>
+    <input id="notes" placeholder="Optional">
+    <div class="row">
+      <button id="saveBtn" class="primary">Save</button>
+      <button id="cancelEditBtn" class="secondary" style="display:none">Cancel</button>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <input id="searchText" placeholder="Search transactions...">
+    <button onclick="searchText.value=''; renderTransactions();">Clear</button>
+  </div>
+
+  <div id="transactionList"></div>
+  <div class="card pagination">
+    <button onclick="prevPage()">Prev</button>
+    <span>Page <b id="pageNo">1</b></span>
+    <button onclick="nextPage()">Next</button>
+  </div>
+  <div class="bottom-spacer"></div>
+</div>
+
+<!-- REPORTS -->
+<div id="reports" class="page">
+  <button class="secondary full" onclick="goHome()">Back to Home</button>
+  <div class="card">
+    <label>From</label>
+    <input id="fromDate" type="date">
+    <label>To</label>
+    <input id="toDate" type="date">
+    <button class="info full" onclick="showLedger()">Show Ledger</button>
+    <button class="info full" onclick="showYearlySummary()">Show Yearly Summary</button>
+    <button class="info full" onclick="compareYears()">Compare Years</button>
+    <button class="primary full" onclick="exportYearlyPDF(event)">Export Yearly PDF</button>
+    <!-- Updated print button for Android -->
+    <button class="primary full" onclick="printLedger(event)">Print / Export PDF</button>
+    <button class="primary full" onclick="exportLedgerPDF(event)">Export PDF</button>
+  </div>
+  <div id="ledgerOutput"></div>
+  <div class="bottom-spacer"></div>
+</div>
+
+<!-- CHARTS -->
+<div id="charts" class="page">
+
+  <button class="secondary full" onclick="goHome()">Back to Home</button>
+
+  <div class="card">
+    <h3>Financial Charts</h3>
+    <p>Visual view of church income and expenses.</p>
+  </div>
+
+  <!-- Income vs Expense -->
+  <div class="card">
+    <h4>Income vs Expenses</h4>
+    <canvas id="incomeExpenseChart"></canvas>
+  </div>
+
+  <!-- Monthly Trend -->
+  <div class="card">
+    <h4>Monthly Trend</h4>
+    <canvas id="monthlyChart"></canvas>
+  </div>
+
+  <button class="primary full" onclick="loadCharts()">
+    Refresh Charts
+  </button>
+
+  <div class="bottom-spacer"></div>
+
+</div>
+
+<!-- BACKUP -->
+<div id="backup" class="page">
+  <button class="secondary full" onclick="goHome()">Back to Home</button>
+  <button class="primary full" onclick="backupData()">Export Backup</button>
+  <input type="file" id="jsonFile" accept=".json" onchange="restoreData(event)">
+  <footer>Believers Revival Ministry ©</footer>
+</div>
+
+<!-- HELP -->
+<div id="help" class="page">
+
+  <button class="secondary full" onclick="goHome()">Back to Home</button>
+
+  <!-- Intro -->
+  <div class="card">
+    <h2>Finance App – User Help & Guide</h2>
+
+    <p>
+      This application helps Believers Revival Ministry record, manage,
+      analyze, and protect church financial records in a secure and organized way.
+    </p>
+
+    <p>
+      This guide explains every feature step-by-step.
+      Read it carefully if you are new to the system.
+    </p>
+  </div>
+
+  <!-- Navigation -->
+  <div class="card">
+    <h3>1. Home Page Navigation</h3>
+
+    <p>When you open the app, you will see the Home screen.</p>
+
+    <ul>
+      <li><b>Record Transaction</b> – Add or edit income and expenses</li>
+      <li><b>View Reports</b> – See financial statements and summaries</li>
+      <li><b>Backup & Restore</b> – Save and recover your data</li>
+      <li><b>Settings</b> – Change appearance and financial rules</li>
+      <li><b>Help</b> – Open this guide</li>
+    </ul>
+
+    <p>
+      Always return to Home by pressing <b>Back to Home</b>.
+    </p>
+  </div>
+
+  <!-- Transactions -->
+  <div class="card">
+    <h3>2. Recording Transactions</h3>
+
+    <h4>A. Adding Income</h4>
+
+    <ol>
+      <li>Tap <b>Record Transaction</b></li>
+      <li>Select <b>Income</b></li>
+      <li>Choose a category (Tithe, Offering, Donation, etc.)</li>
+      <li>Enter the amount in KES</li>
+      <li>Select the correct date</li>
+      <li>Add a note (optional)</li>
+      <li>Tap <b>Save</b></li>
+    </ol>
+
+    <h4>B. Adding Expenses</h4>
+
+    <ol>
+      <li>Select <b>Expense</b></li>
+      <li>Choose expense category</li>
+      <li>Enter amount paid</li>
+      <li>Select payment date</li>
+      <li>Add description if needed</li>
+      <li>Tap <b>Save</b></li>
+    </ol>
+
+    <p>
+      Always confirm before saving. Check figures carefully.
+    </p>
+  </div>
+
+  <!-- Edit/Delete -->
+  <div class="card">
+    <h3>3. Editing and Deleting Records</h3>
+
+    <h4>Edit Transaction</h4>
+
+    <ul>
+      <li>Scroll to find the record</li>
+      <li>Tap <b>Edit</b></li>
+      <li>Change details</li>
+      <li>Tap <b>Update</b></li>
+    </ul>
+
+    <h4>Delete Transaction</h4>
+
+    <ul>
+      <li>Tap <b>Delete</b></li>
+      <li>Confirm deletion</li>
+    </ul>
+
+    <p>
+      ⚠ Deleted records cannot be recovered unless you have a backup.
+    </p>
+  </div>
+
+  <!-- Search & Pagination -->
+  <div class="card">
+    <h3>4. Searching and Browsing Records</h3>
+
+    <p>
+      Use the search box to find transactions by:
+    </p>
+
+    <ul>
+      <li>Category</li>
+      <li>Type (Income / Expense)</li>
+      <li>Notes</li>
+    </ul>
+
+    <p>
+      Use <b>Prev</b> and <b>Next</b> buttons to move between pages.
+    </p>
+  </div>
+
+  <!-- Reports -->
+  <div class="card">
+    <h3>5. Reports and Financial Statements</h3>
+
+    <h4>A. Ledger Report</h4>
+
+    <ol>
+      <li>Select From and To dates</li>
+      <li>Tap <b>Show Ledger</b></li>
+      <li>View monthly summaries and balances</li>
+    </ol>
+
+    <h4>B. Yearly Summary</h4>
+
+    <ol>
+      <li>Select any date in the year</li>
+      <li>Tap <b>Show Yearly Summary</b></li>
+    </ol>
+
+    <h4>C. Year Comparison</h4>
+
+    <ol>
+      <li>Select two different years</li>
+      <li>Tap <b>Compare Years</b></li>
+    </ol>
+
+    <p>
+      Reports help leaders understand income, expenses, and growth.
+    </p>
+  </div>
+
+  <!-- PDF -->
+  <div class="card">
+    <h3>6. Printing and Exporting Reports</h3>
+
+    <ul>
+      <li><b>Print / Export PDF</b> – Creates printable statement</li>
+      <li><b>Export PDF</b> – Saves report to phone</li>
+      <li><b>Export Yearly PDF</b> – Creates annual report</li>
+    </ul>
+
+    <p>
+      You can share PDFs through WhatsApp, Email, or Google Drive.
+    </p>
+  </div>
+
+  <!-- Backup -->
+  <div class="card">
+    <h3>7. Backup and Data Protection</h3>
+
+    <h4>Creating Backup</h4>
+
+    <ol>
+      <li>Open <b>Backup & Restore</b></li>
+      <li>Tap <b>Export Backup</b></li>
+      <li>Save file in Drive or Email</li>
+    </ol>
+
+    <h4>Restoring Backup</h4>
+
+    <ol>
+      <li>Select backup file</li>
+      <li>Confirm restore</li>
+    </ol>
+
+    <p>
+      📌 Make backups weekly or monthly.
+    </p>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <h3>8. System Settings</h3>
+
+    <h4>Theme</h4>
+    <p>
+      Change color theme for better visibility.
+    </p>
+
+    <h4>Items Per Page</h4>
+    <p>
+      Control how many records appear on screen.
+    </p>
+
+    <h4>Opening Balance</h4>
+    <p>
+      Choose how the system calculates starting balances.
+    </p>
+
+    <ul>
+      <li><b>Manual</b> – Enter balance yourself</li>
+      <li><b>Financial Year</b> – Auto calculate</li>
+      <li><b>Previous</b> – Uses past records</li>
+    </ul>
+  </div>
+
+  <!-- Best Practice -->
+  <div class="card">
+    <h3>9. Best Practices for Church Finance</h3>
+
+    <ul>
+      <li>Record transactions immediately</li>
+      <li>Keep receipts</li>
+      <li>Backup regularly</li>
+      <li>Review reports monthly</li>
+      <li>Allow audits yearly</li>
+    </ul>
+  </div>
+
+  <!-- Security -->
+  <div class="card">
+    <h3>10. Security and Responsibility</h3>
+
+    <p>
+      This device contains sensitive financial data.
+    </p>
+
+    <ul>
+      <li>Do not share phone passwords</li>
+      <li>Limit access to treasurer only</li>
+      <li>Backup before phone repair</li>
+    </ul>
+  </div>
+
+  <!-- Support -->
+  <div class="card">
+
+  <!-- Charts Internet Notice -->
+<div class="card">
+  <h3>Charts and Internet Connection</h3>
+
+  <p>
+    Financial charts in this application require an active
+    internet connection to display correctly.
+  </p>
+
+  <h4>Why Connection Is Required</h4>
+
+  <ul>
+    <li>Graph tools are loaded from online servers</li>
+    <li>Data visualization depends on network access</li>
+    <li>No connection means charts cannot be downloaded</li>
+  </ul>
+
+  <h4>Signs of Connection Problems</h4>
+
+  <ul>
+    <li>Blank or white chart areas</li>
+    <li>Graphs not appearing</li>
+    <li>Loading takes too long</li>
+  </ul>
+
+  <h4>What To Do</h4>
+
+  <ol>
+    <li>Turn on mobile data or Wi-Fi</li>
+    <li>Confirm internet is working in browser</li>
+    <li>Reload the application</li>
+    <li>Re-open the Charts page</li>
+  </ol>
+
+  <h4>Best Practice</h4>
+
+  <p>
+    Before meetings or presentations,
+    confirm that internet connection is active
+    to avoid delays.
+  </p>
+
+  <p style="color:var(--accent)">
+    Tip: Keep data bundles available
+    when using charts regularly.
+  </p>
+</div>
+
+    <h3>11. Technical Support</h3>
+
+    <p>
+      If the system fails or data is missing:
+    </p>
+
+    <ol>
+      <li>Do not reinstall immediately</li>
+      <li>Check backup files</li>
+      <li>Contact developer/support</li>
+    </ol>
+
+    <p>
+      Keep backup copies in at least two places.
+    </p>
+  </div>
+
+  <div class="bottom-spacer"></div>
+
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="page">
+  <button class="secondary full" onclick="goHome()">Back to Home</button>
+  <div class="card">
+    <h3>Settings</h3>
+    <p>Configure finance behaviour for your church.</p>
+  </div>
+  <div class="card">
+    <h4>Finance</h4>
+    <h4>Appearance</h4>
+
+<label>Theme Color</label>
+<select id="themeSelect">
+  <option value="light">Light (White)</option>
+  <option value="blue">Blue (Default)</option>
+  <option value="red">Red</option>
+  <option value="yellow">Yellow</option>
+  <option value="green">Green</option>
+  <option value="teal">Teal</option>
+  <option value="brown">Brown</option>
+  <option value="purple">Purple</option>
+  <option value="gold">Dark Gold</option>
+</select>
+    <label>Items per page</label>
+    <select id="itemsPerPage">
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+    </select>
+
+    <label>Opening Balance Mode</label>
+    <select id="openingBalanceMode">
+      <option value="manual">Manual</option>
+      <option value="financialYear">Financial Year</option>
+      <option value="previous">Previous</option>
+    </select>
+
+    <div id="manualOpeningBalanceWrap">
+      <label>Opening Balance (KES)</label>
+      <input id="openingBalance" type="number" placeholder="0">
+    </div>
+
+    <label>Financial year starts in</label>
+    <select id="fyStartMonth">
+      <option value="0">January</option>
+      <option value="1">February</option>
+      <option value="2">March</option>
+      <option value="3">April</option>
+      <option value="4">May</option>
+      <option value="5">June</option>
+      <option value="6">July</option>
+      <option value="7">August</option>
+      <option value="8">September</option>
+      <option value="9">October</option>
+      <option value="10">November</option>
+      <option value="11">December</option>
+    </select>
+
+    <button class="primary full" onclick="saveSettings()">Save Settings</button>
+  </div>
+  <div class="bottom-spacer"></div>
+</div>
+
+<!-- JS -->
+<script>
+(() => {
+  /* =================== Particles =================== */
+  const particlesContainer = document.getElementById("particles");
+  const particleCount = 120;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const particles = [];
+
+  for (let i = 0; i < particleCount; i++) {
+    const star = document.createElement("div");
+    star.className = "particle";
+    const size = Math.random() * 2 + 2;
+    star.style.width = size + "px";
+    star.style.height = size + "px";
+    star.style.left = Math.random() * vw + "px";
+    star.style.top = Math.random() * vh + "px";
+    particlesContainer.appendChild(star);
+    particles.push({
+      el: star,
+      x: parseFloat(star.style.left),
+      y: parseFloat(star.style.top),
+      speed: Math.random() * 0.3 + 0.1,
+      opacity: Math.random() * 0.6 + 0.4,
+      twinkleDir: Math.random() > 0.5 ? 1 : -1,
+      twinkleSpeed: Math.random() * 0.02 + 0.01
+    });
+  }
+
+  let animationRunning = true;
+
+function animateParticles() {
+
+  if(!animationRunning) return;
+
+  particles.forEach(p => {
+    p.y -= p.speed;
+
+    if (p.y < -10) {
+      p.y = vh + 10;
+      p.x = Math.random() * vw;
+    }
+
+    p.opacity += 0.01 * p.twinkleDir;
+
+    if (p.opacity > 1) {
+      p.opacity = 1;
+      p.twinkleDir = -1;
+    }
+
+    if (p.opacity < 0.4) {
+      p.opacity = 0.4;
+      p.twinkleDir = 1;
+    }
+
+    p.el.style.transform = `translate(${p.x}px, ${p.y}px)`;
+    p.el.style.opacity = p.opacity;
+  });
+
+  requestAnimationFrame(animateParticles);
+}
+
+// Start animation
+animateParticles();
+
+// Handle app pause/resume
+document.addEventListener("visibilitychange", () => {
+
+  if(document.hidden){
+    animationRunning = false;
+  }else{
+    animationRunning = true;
+    animateParticles();
+  }
+
+});
+
+  /* =================== Data & Settings =================== */
+  let records = JSON.parse(localStorage.getItem("records") || "[]");
+  let editId = null;
+  let currentPage = 1;
+  let filteredCount = 0;
+
+  let appSettings = JSON.parse(localStorage.getItem("appSettings")) || {
+    finance: {
+      itemsPerPage: 10,
+      openingBalanceMode: "financialYear", // manual | financialYear | previous
+      openingBalance: 0,
+      financialYearStartMonth: 0
+    }
+  };
+  let perPage = appSettings.finance.itemsPerPage;
+
+  /* =================== Elements =================== */
+  const type = document.getElementById("type");
+  const category = document.getElementById("category");
+  const amount = document.getElementById("amount");
+  const date = document.getElementById("date");
+  const notes = document.getElementById("notes");
+  const saveBtn = document.getElementById("saveBtn");
+  const cancelEditBtn = document.getElementById("cancelEditBtn");
+  const transactionList = document.getElementById("transactionList");
+  const searchText = document.getElementById("searchText");
+  const pageNo = document.getElementById("pageNo");
+  const formTitle = document.getElementById("formTitle");
+  const fromDate = document.getElementById("fromDate");
+  const toDate = document.getElementById("toDate");
+  const ledgerOutput = document.getElementById("ledgerOutput");
+  const itemsPerPageSelect = document.getElementById("itemsPerPage");
+  const openingBalanceInput = document.getElementById("openingBalance");
+  const fyStartMonthSelect = document.getElementById("fyStartMonth");
+  const openingBalanceModeSelect = document.getElementById("openingBalanceMode");
+  const manualOpeningBalanceWrap = document.getElementById("manualOpeningBalanceWrap");
+  const themeSelect = document.getElementById("themeSelect");
+
+  date.valueAsDate = new Date();
+
+  const incomeCategories = [
+    "Tithe","Offering","Donations","Fundraising","Thanksgiving","Rental Income","Grants / External Support","Other Income"
+  ];
+
+  const expenseCategories = [
+    "National Office Contribution (10%)","Bishop Support (10%)","Pastor Support (30%)",
+    "Pastor/Staff Salaries","Administrative Staff Wages","Security Personnel","Utilities (Electricity, Water, Internet)",
+    "Office Supplies","Telephone & Mobile Airtime","Transport / Fuel","Insurance","Bank / Mobile Money Charges",
+    "Sunday School Materials","Bibles / Hymnbooks","Worship Music / Instruments Maintenance","PA System / Audio Equipment",
+    "Youth Ministry Programs","Women Fellowship Programs","Men Fellowship Programs","Evangelism / Outreach","Guest Speaker / Visiting Pastor Expenses",
+    "Baptism / Communion Supplies","Building Repairs / Renovation","Cleaning & Sanitation Supplies","Gardening / Compound Maintenance",
+    "Furniture / Chairs / Benches","Painting / Decoration","Roof / Plumbing / Electrical Repairs","Church Meetings / Conferences",
+    "Church Anniversaries / Special Programs","Refreshments / Food for Events","Transport for Trips / Retreats","Wedding / Funeral Support",
+    "Aid to Needy / Members in Crisis","School Fees / Scholarships","Community Projects (Water, Sanitation, Medical)",
+    "Printing & Stationery","Advertising / Promotions","Contingency Fund","Loan Repayments","Other Expense"
+  ];
+
+  function loadCategories() {
+    category.innerHTML = "";
+    const list = type.value==="Income"?incomeCategories:expenseCategories;
+    list.forEach(c=>{
+      const opt=document.createElement("option");
+      opt.value=c;
+      opt.textContent=c;
+      category.appendChild(opt);
+    });
+  }
+  type.onchange = loadCategories;
+  loadCategories();
+
+  /* =================== Navigation =================== */
+  const globalBackBtn = document.getElementById("globalBackBtn");
+  window.openPage = id => {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(p => p.classList.remove("active"));
+
+  document
+    .getElementById(id)
+    .classList.add("active");
+
+  globalBackBtn.style.display =
+    id==="home"?"none":"block";
+
+  // Auto load charts
+  if(id === "charts"){
+    setTimeout(loadCharts,200);
+  }
+
+};
+  window.goHome = () => openPage("home");
+
+  /* =================== CRUD =================== */
+  saveBtn.onclick = () => {
+    if(!amount.value||!date.value||!category.value) return alert("Please fill all required fields");
+    if(Number(amount.value)<=0) return alert("Amount must be greater than zero");
+
+    const tx = {
+      id: editId || Date.now(),
+      type: type.value,
+      category: category.value.trim(),
+      amount: Number(amount.value),
+      date: date.value,
+      notes: notes.value.trim()
+    };
+
+    if(editId){
+      if(!confirm("Update this transaction?")) return;
+      records = records.map(r=>r.id===editId?tx:r);
+      alert("Transaction updated ✅");
+    }else{
+      if(!confirm("Save this transaction?")) return;
+      records.push(tx);
+      alert("Transaction saved ✅");
+    }
+    localStorage.setItem("records", JSON.stringify(records));
+    cancelEdit(true);
+    renderTransactions();
+    setTimeout(()=>document.querySelector("#transactionList").scrollTop=0,50);
+  };
+
+  window.startEdit = id => {
+    const r = records.find(x=>x.id===id); if(!r) return;
+    editId=id; formTitle.textContent="Edit Transaction"; saveBtn.textContent="Update";
+    cancelEditBtn.style.display="inline-block";
+    type.value=r.type; loadCategories(); category.value=r.category; amount.value=r.amount; date.value=r.date; notes.value=r.notes;
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+
+  function cancelEdit(force=false){
+    if(editId && !force){if(!confirm("Cancel editing? Unsaved changes will be lost.")) return;}
+    editId=null; formTitle.textContent="Add Transaction"; saveBtn.textContent="Save";
+    cancelEditBtn.style.display="none"; type.value="Income"; loadCategories();
+    category.value=""; amount.value=""; date.valueAsDate=new Date(); notes.value="";
+  }
+  cancelEditBtn.onclick=cancelEdit;
+
+  window.deleteTx = id => {
+    if(!confirm("This will permanently delete the transaction.\nContinue?")) return;
+    records = records.filter(r=>r.id!==id);
+    localStorage.setItem("records", JSON.stringify(records));
+    renderTransactions();
+  };
+
+  /* =================== Render =================== */
+  function formatMonth(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleString("default",{month:"long",year:"numeric"});
+  }
+
+  function renderTransactions(){
+    let data=[...records].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if(searchText.value){
+      const q=searchText.value.toLowerCase();
+      data=data.filter(r=>`${r.type} ${r.category} ${r.notes}`.toLowerCase().includes(q));
+      currentPage=1;
+    }
+    filteredCount=data.length;
+    const totalPages=Math.max(1,Math.ceil(filteredCount/perPage));
+    if(currentPage>totalPages) currentPage=totalPages;
+    const start=(currentPage-1)*perPage;
+    const pageData=data.slice(start,start+perPage);
+    let lastMonth="";
+    transactionList.innerHTML=pageData.map(r=>{
+      const m=formatMonth(r.date);
+      const header = m!==lastMonth?`<div class="card" style="background:var(--bg);border-left:4px solid var(--primary)"><b>${m}</b></div>`:"";
+      lastMonth=m;
+      return `${header}<div class="card">
+        <div style="display:flex;justify-content:space-between"><b>${r.category}</b>
+        <span class="badge ${r.type==="Income"?"income":"expense"}">${r.type}</span></div>
+        <small style="color:#94a3b8">${r.date}</small>
+        <b style="font-size:17px">KES ${r.amount.toLocaleString()}</b><br>
+        ${r.notes?`<small>${r.notes}</small>`:""}
+        <div class="row">
+          <button onclick="startEdit(${r.id})">Edit</button>
+          <button class="danger" onclick="deleteTx(${r.id})">Delete</button>
+        </div>
+      </div>`;
+    }).join("")||"<b>No transactions found.</b>";
+    pageNo.textContent=currentPage;
+  }
+
+  window.prevPage = ()=>{if(currentPage>1){currentPage--; renderTransactions();}};
+  window.nextPage = ()=>{const totalPages=Math.max(1,Math.ceil(filteredCount/perPage)); if(currentPage<totalPages){currentPage++; renderTransactions();}};
+  searchText.oninput = renderTransactions;
+  renderTransactions();
+
+  /* =================== Ledger & PDF =================== */
+  function getFinancialYearStart(date){
+    const fyMonth = appSettings.finance.financialYearStartMonth;
+    const d = new Date(date);
+    const fyStart = new Date(d.getFullYear(), fyMonth, 1);
+    if(d<fyStart) fyStart.setFullYear(fyStart.getFullYear()-1);
+    return fyStart;
+  }
+
+  function calculateCarryForwardBalance(fyStartDate){
+    return records.filter(r=>new Date(r.date)<fyStartDate)
+      .reduce((sum,r)=>sum+(r.type==="Income"?r.amount:-r.amount),0);
+  }
+
+  function getOpeningBalance(from){
+    const mode = appSettings.finance.openingBalanceMode;
+    if(mode==="manual") return appSettings.finance.openingBalance||0;
+    if(mode==="financialYear") return calculateCarryForwardBalance(getFinancialYearStart(from));
+    if(mode==="previous")
+return records
+  .filter(r => new Date(r.date) < from)
+  .reduce((sum,r)=>
+    sum+(r.type==="Income"?r.amount:-r.amount),0);
+    return 0;
+  }
+
+  function setCurrentMonth(){
+    const n=new Date();
+    fromDate.value=new Date(n.getFullYear(),n.getMonth(),1).toISOString().slice(0,10);
+    toDate.value=new Date(n.getFullYear(),n.getMonth()+1,0).toISOString().slice(0,10);
+  }
+  setCurrentMonth();
+
+  window.showLedger = ()=>{
+
+  const from = new Date(fromDate.value);
+  const to = new Date(toDate.value);
+
+  if(!fromDate.value || !toDate.value){
+    alert("Select date range first");
+    return;
+  }
+
+  let openingBalance = getOpeningBalance(from);
+
+  const filtered = records
+    .filter(r => new Date(r.date) >= from && new Date(r.date) <= to)
+    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  if(!filtered.length){
+    ledgerOutput.innerHTML = "<b>No data for this period</b>";
+    return;
+  }
+
+  const groups = {};
+
+  filtered.forEach(r=>{
+    const key = formatMonth(r.date);
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  let html = "";
+  let runningBalance = openingBalance;
+
+  // Financial Year Card
+  const fyStart = getFinancialYearStart(from);
+  const fyEnd = new Date(fyStart);
+  fyEnd.setFullYear(fyEnd.getFullYear()+1);
+  fyEnd.setDate(fyEnd.getDate()-1);
+
+  html += `
+  <div class="card" style="background:var(--card);border-left:4px solid var(--primary)">
+    <b>Financial Year:</b><br>
+    ${fyStart.toLocaleDateString()} – ${fyEnd.toLocaleDateString()}
+  </div>
+  `;
+
+  // Each Month
+  Object.keys(groups).forEach(month=>{
+
+    let monthIncome = 0;
+    let monthExpense = 0;
+
+    groups[month].forEach(r=>{
+      if(r.type==="Income") monthIncome += r.amount;
+      else monthExpense += r.amount;
+    });
+
+    const opening = runningBalance;
+    const closing = opening + monthIncome - monthExpense;
+
+    // ===== Monthly Summary =====
+    html += `
+    <div class="card" style="border-left:5px solid var(--primary);background:var(--card)">
+      <h3>${month} Summary</h3>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+        <div>
+          <b>Opening</b><br>
+          KES ${opening.toLocaleString()}
+        </div>
+
+        <div>
+          <b>Closing</b><br>
+          KES ${closing.toLocaleString()}
+        </div>
+
+        <div style="color:var(--income)">
+          <b>Income</b><br>
+          KES ${monthIncome.toLocaleString()}
+        </div>
+
+        <div style="color:var(--expense)">
+          <b>Expenses</b><br>
+          KES ${monthExpense.toLocaleString()}
+        </div>
+
+      </div>
+    </div>
+    `;
+
+    // ===== Transactions =====
+    groups[month].forEach(r=>{
+
+      runningBalance += r.type==="Income" ? r.amount : -r.amount;
+
+      html += `
+      <div class="card" style="padding:14px;background:var(--card)">
+
+        <b>${r.category}</b><br>
+
+        <small style="color:var(--muted)">
+          ${r.date}
+        </small><br>
+
+        <span class="badge ${r.type==="Income"?"income":"expense"}">
+          ${r.type}
+        </span>
+
+        <b style="font-size:16px">
+          KES ${r.amount.toLocaleString()}
+        </b><br>
+
+        <small style="color:var(--muted)">
+          Balance: KES ${runningBalance.toLocaleString()}
+        </small>
+
+      </div>
+      `;
+    });
+
+  });
+
+  ledgerOutput.innerHTML = html;
+};
+
+  window.showYearlySummary = () => {
+
+  if(!fromDate.value){
+    alert("Select any date in the year first");
+    return;
+  }
+
+  const selectedDate = new Date(fromDate.value);
+  const year = selectedDate.getFullYear();
+
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31);
+
+  // Opening balance
+  const opening = records
+    .filter(r => new Date(r.date) < yearStart)
+    .reduce((sum,r)=>
+      sum + (r.type==="Income"?r.amount:-r.amount),0);
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  // Group by month
+  const months = {};
+
+  records.forEach(r=>{
+
+    const d = new Date(r.date);
+
+    if(d >= yearStart && d <= yearEnd){
+
+      const key = d.getMonth(); // 0-11
+
+      if(!months[key]){
+        months[key] = {
+          income: 0,
+          expense: 0
+        };
+      }
+
+      if(r.type==="Income"){
+        months[key].income += r.amount;
+        totalIncome += r.amount;
+      }else{
+        months[key].expense += r.amount;
+        totalExpense += r.amount;
+      }
+    }
+  });
+
+  const closing = opening + totalIncome - totalExpense;
+
+  let html = "";
+
+  // ===== Year Summary =====
+  html += `
+  <div class="card" style="border-left:5px solid var(--primary)">
+    <h3>Yearly Summary: ${year}</h3>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+      <div>
+        <b>Opening</b><br>
+        KES ${opening.toLocaleString()}
+      </div>
+
+      <div>
+        <b>Closing</b><br>
+        KES ${closing.toLocaleString()}
+      </div>
+
+      <div style="color:var(--income)">
+        <b>Total Income</b><br>
+        KES ${totalIncome.toLocaleString()}
+      </div>
+
+      <div style="color:var(--expense)">
+        <b>Total Expenses</b><br>
+        KES ${totalExpense.toLocaleString()}
+      </div>
+
+    </div>
+  </div>
+  `;
+
+  // ===== Monthly Breakdown =====
+  let running = opening;
+
+  Object.keys(months).sort().forEach(m=>{
+
+    const monthName = new Date(year, m).toLocaleString("default",{month:"long"});
+
+    const income = months[m].income;
+    const expense = months[m].expense;
+
+    const open = running;
+    const close = open + income - expense;
+
+    running = close;
+
+    html += `
+    <div class="card">
+
+      <h4>${monthName}</h4>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+        <div>
+          Opening<br>
+          KES ${open.toLocaleString()}
+        </div>
+
+        <div>
+          Closing<br>
+          KES ${close.toLocaleString()}
+        </div>
+
+        <div style="color:var(--income)">
+          Income<br>
+          KES ${income.toLocaleString()}
+        </div>
+
+        <div style="color:var(--expense)">
+          Expense<br>
+          KES ${expense.toLocaleString()}
+        </div>
+
+      </div>
+
+    </div>
+    `;
+  });
+
+  ledgerOutput.innerHTML = html;
+};
+
+  window.compareYears = () => {
+
+  if(!fromDate.value || !toDate.value){
+    alert("Select two dates from different years");
+    return;
+  }
+
+  const y1 = new Date(fromDate.value).getFullYear();
+  const y2 = new Date(toDate.value).getFullYear();
+
+  if(y1 === y2){
+    alert("Please select two different years");
+    return;
+  }
+
+  function getYearStats(year){
+
+    const start = new Date(year,0,1);
+    const end = new Date(year,11,31);
+
+    let income = 0;
+    let expense = 0;
+
+    records.forEach(r=>{
+
+      const d = new Date(r.date);
+
+      if(d >= start && d <= end){
+
+        if(r.type === "Income"){
+          income += r.amount;
+        }else{
+          expense += r.amount;
+        }
+      }
+    });
+
+    const surplus = income - expense;
+
+    return { year, income, expense, surplus };
+  }
+
+  const A = getYearStats(y1);
+  const B = getYearStats(y2);
+
+  const growth = B.surplus - A.surplus;
+
+  const percent = A.surplus !== 0
+    ? ((growth / Math.abs(A.surplus)) * 100).toFixed(1)
+    : "N/A";
+
+  ledgerOutput.innerHTML = `
+
+  <div class="card" style="border-left:5px solid var(--primary)">
+
+    <h3>Year Performance Comparison</h3>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+      <div>
+        <h4>${A.year}</h4>
+
+        <b>Income:</b><br>
+        KES ${A.income.toLocaleString()}<br><br>
+
+        <b>Expenses:</b><br>
+        KES ${A.expense.toLocaleString()}<br><br>
+
+        <b>Surplus:</b><br>
+        KES ${A.surplus.toLocaleString()}
+      </div>
+
+      <div>
+        <h4>${B.year}</h4>
+
+        <b>Income:</b><br>
+        KES ${B.income.toLocaleString()}<br><br>
+
+        <b>Expenses:</b><br>
+        KES ${B.expense.toLocaleString()}<br><br>
+
+        <b>Surplus:</b><br>
+        KES ${B.surplus.toLocaleString()}
+      </div>
+
+    </div>
+
+    <hr>
+
+    <div style="text-align:center">
+
+      <b>Growth:</b><br>
+
+      KES ${growth.toLocaleString()}<br>
+      (${percent}%)
+
+    </div>
+
+  </div>
+  `;
+};
+  /* =================== PRINT & PDF for Android =================== */
+  window.printLedger = (event) => {
+
+  const btn = event.target;
+disableButton(btn,"Generating...");
+
+  const from = new Date(fromDate.value);
+  const to = new Date(toDate.value);
+
+  if(!fromDate.value || !toDate.value){
+    alert("Select date range first");
+    return;
+  }
+
+  const data = records
+    .filter(r => new Date(r.date) >= from && new Date(r.date) <= to)
+    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  if(!data.length){
+    alert("No transactions for this period");
+    return;
+  }
+
+  const openingBalance = getOpeningBalance(from);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let y = 20;
+  let runningBalance = openingBalance;
+
+  // ===== HEADER =====
+  doc.setFontSize(16);
+  doc.text("BELIEVERS REVIVAL MINISTRY", 105, y, { align:"center" });
+  y += 8;
+
+  doc.setFontSize(12);
+  doc.text("FINANCIAL STATEMENT", 105, y, { align:"center" });
+  y += 6;
+
+  doc.setFontSize(10);
+  doc.text(`Period: ${fromDate.value} to ${toDate.value}`, 105, y, { align:"center" });
+  y += 10;
+
+  // ===== OPENING =====
+  doc.setFontSize(11);
+  doc.text(`Opening Balance: KES ${openingBalance.toLocaleString()}`, 14, y);
+  y += 8;
+
+  doc.line(14, y, 196, y);
+  y += 6;
+
+  // ===== BODY =====
+  doc.setFontSize(10);
+
+  data.forEach(r=>{
+
+    if(y > 270){
+      doc.addPage();
+      y = 20;
+    }
+
+    const amount =
+      r.type === "Income"
+        ? `+${r.amount.toLocaleString()}`
+        : `-${r.amount.toLocaleString()}`;
+
+    runningBalance += r.type==="Income" ? r.amount : -r.amount;
+
+    const line =
+      `${r.date} | ${r.category} | ${r.type} | ${amount} | Bal: ${runningBalance.toLocaleString()}`;
+
+    doc.text(line, 14, y);
+
+    y += 6;
+  });
+
+  // ===== FOOTER =====
+  if(y > 250){
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.line(14, y, 196, y);
+  y += 8;
+
+  doc.setFontSize(11);
+  doc.text(`Closing Balance: KES ${runningBalance.toLocaleString()}`, 14, y);
+  y += 8;
+
+  doc.setFontSize(9);
+  doc.text(
+    `"Let all things be done decently and in order" (1 Corinthians 14:40)`,
+    105,
+    y,
+    { align:"center" }
+  );
+
+  // ===== OPEN PDF =====
+  downloadPDF(
+  doc,
+  `Ledger_${fromDate.value}_to_${toDate.value}.pdf`
+);
+
+};
+
+  window.exportLedgerPDF = (event) => {
+
+  const btn = event.target;
+disableButton(btn,"Generating...");
+ 
+  const from = new Date(fromDate.value);
+  const to = new Date(toDate.value);
+
+  const data = records
+    .filter(r => new Date(r.date) >= from && new Date(r.date) <= to)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (!data.length) {
+    alert("No transactions for this period");
+    return;
+  }
+
+  const openingBalance = getOpeningBalance(from);
+
+  let runningBalance = openingBalance;
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let y = 20;
+
+  // Header
+  doc.setFontSize(16);
+  doc.text("BELIEVERS REVIVAL MINISTRY", 105, y, { align: "center" });
+  y += 8;
+
+  doc.setFontSize(11);
+  doc.text("FINANCIAL STATEMENT", 105, y, { align: "center" });
+  y += 6;
+
+  doc.text(`Period: ${fromDate.value} to ${toDate.value}`, 105, y, { align: "center" });
+  y += 10;
+
+  doc.setFontSize(12);
+  doc.text(`Balance B/F: KES ${openingBalance.toLocaleString()}`, 14, y);
+  y += 8;
+
+  doc.line(14, y, 196, y);
+  y += 6;
+
+  doc.setFontSize(11);
+
+  // Transactions
+  data.forEach(r => {
+
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+
+    const amountText =
+      r.type === "Income"
+        ? `+KES ${r.amount.toLocaleString()}`
+        : `-KES ${r.amount.toLocaleString()}`;
+
+    runningBalance += r.type === "Income" ? r.amount : -r.amount;
+
+    if (r.type === "Income") totalIncome += r.amount;
+    else totalExpense += r.amount;
+
+    doc.text(
+      `${r.date} | ${r.category} | ${r.type}: ${amountText} | Balance: KES ${runningBalance.toLocaleString()}`,
+      14,
+      y
+    );
+
+    y += 6;
+  });
+
+  // Footer
+  if (y > 250) {
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.line(14, y, 196, y);
+  y += 8;
+
+  doc.setFontSize(12);
+
+  doc.text(`Total Income: KES ${totalIncome.toLocaleString()}`, 14, y);
+  y += 6;
+
+  doc.text(`Total Expenses: KES ${totalExpense.toLocaleString()}`, 14, y);
+  y += 6;
+
+  doc.text(
+    `Balance C/F: KES ${(openingBalance + totalIncome - totalExpense).toLocaleString()}`,
+    14,
+    y
+  );
+
+  y += 10;
+
+  doc.setFontSize(10);
+  doc.text(
+    `"Let all things be done decently and in order" (1 Corinthians 14:40)`,
+    105,
+    y,
+    { align: "center" }
+  );
+
+  // ===== SHARE PART (IMPORTANT) =====
+
+  downloadPDF(
+  doc,
+  `Report_${fromDate.value}_to_${toDate.value}.pdf`
+);
+
+  window.location.href = shareUrl;
+
+  alert("Choose WhatsApp, Gmail, or Drive to share/save the report ✅");
+};
+
+  window.exportYearlyPDF = (event) => {
+   
+    const btn = event.target;
+disableButton(btn,"Generating...");
+
+  if(!fromDate.value){
+    alert("Select any date in the year first");
+    return;
+  }
+
+  const selectedDate = new Date(fromDate.value);
+  const year = selectedDate.getFullYear();
+
+  const yearStart = new Date(year,0,1);
+  const yearEnd = new Date(year,11,31);
+
+  // Opening balance
+  const opening = records
+    .filter(r => new Date(r.date) < yearStart)
+    .reduce((sum,r)=>
+      sum + (r.type==="Income"?r.amount:-r.amount),0);
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  const months = {};
+
+  records.forEach(r=>{
+
+    const d = new Date(r.date);
+
+    if(d >= yearStart && d <= yearEnd){
+
+      const m = d.getMonth();
+
+      if(!months[m]){
+        months[m] = { income:0, expense:0 };
+      }
+
+      if(r.type==="Income"){
+        months[m].income += r.amount;
+        totalIncome += r.amount;
+      }else{
+        months[m].expense += r.amount;
+        totalExpense += r.amount;
+      }
+    }
+  });
+
+  const closing = opening + totalIncome - totalExpense;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let y = 20;
+  let running = opening;
+
+  // Header
+  doc.setFontSize(16);
+  doc.text("BELIEVERS REVIVAL MINISTRY",105,y,{align:"center"});
+  y+=8;
+
+  doc.setFontSize(13);
+  doc.text(`YEARLY REPORT - ${year}`,105,y,{align:"center"});
+  y+=10;
+
+  doc.setFontSize(11);
+  doc.text(`Opening: KES ${opening.toLocaleString()}`,14,y); y+=6;
+  doc.text(`Closing: KES ${closing.toLocaleString()}`,14,y); y+=6;
+
+  doc.text(`Income: KES ${totalIncome.toLocaleString()}`,14,y); y+=6;
+  doc.text(`Expense: KES ${totalExpense.toLocaleString()}`,14,y); y+=8;
+
+  doc.line(14,y,196,y);
+  y+=8;
+
+  // Months
+  Object.keys(months).sort().forEach(m=>{
+
+    if(y>260){
+      doc.addPage();
+      y=20;
+    }
+
+    const name = new Date(year,m).toLocaleString("default",{month:"long"});
+
+    const income = months[m].income;
+    const expense = months[m].expense;
+
+    const open = running;
+    const close = open + income - expense;
+
+    running = close;
+
+    doc.setFontSize(12);
+    doc.text(name,14,y); y+=6;
+
+    doc.setFontSize(10);
+    doc.text(`Opening: ${open.toLocaleString()}`,18,y); y+=5;
+    doc.text(`Income: ${income.toLocaleString()}`,18,y); y+=5;
+    doc.text(`Expense: ${expense.toLocaleString()}`,18,y); y+=5;
+    doc.text(`Closing: ${close.toLocaleString()}`,18,y); y+=7;
+  });
+
+  downloadPDF(
+  doc,
+  `Yearly_Report_${year}.pdf`
+);
+
+  function formatFileName(name){
+  return name.replace(/[^a-z0-9_-]/gi,"_");
+}
+
+  downloadPDF(
+  doc,
+  formatFileName(`Report_${fromDate.value}_to_${toDate.value}.pdf`)
+);
+};
+
+  function downloadPDF(doc, filename){
+
+  const pdfData = doc.output("datauristring");
+
+  const link = document.createElement("a");
+  link.href = pdfData;
+  link.download = filename;
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/* =================== Backup / Restore =================== */
+  window.backupData = ()=>{
+
+  const json = JSON.stringify(records, null, 2);
+
+  const dataUrl =
+    "data:application/json;charset=utf-8," +
+    encodeURIComponent(json);
+
+  const shareUrl =
+    "intent:#Intent;" +
+    "action=android.intent.action.SEND;" +
+    "type=application/json;" +
+    "S.android.intent.extra.TEXT=Church Backup File;" +
+    "S.android.intent.extra.STREAM=" + encodeURIComponent(dataUrl) + ";" +
+    "end";
+
+  window.location.href = shareUrl;
+
+  alert("Choose Drive, Email, or Storage to save backup ✅");
+};
+
+  window.restoreData = (e)=>{
+    const f = e.target.files[0]; 
+    if(!f) return alert("Select a backup file");
+    const r = new FileReader();
+    r.onload = evt => {
+      const d = JSON.parse(evt.target.result);
+      if(Array.isArray(d)){
+        records=d; 
+        localStorage.setItem("records",JSON.stringify(records)); 
+        renderTransactions(); 
+        alert("Backup restored ✅");
+      }
+    };
+    r.readAsText(f);
+  };
+
+  /* =================== Settings =================== */
+  /* =================== Themes =================== */
+
+const themes = {
+  light: {
+    primary: "#2563eb",
+    accent: "#16a34a",
+    bg: "#f9fafb",
+    card: "#ffffff",
+    text: "#111827",
+    muted: "#4b5563"
+  },
+
+  blue: {
+    primary: "#4f46e5",
+    accent: "#22c55e",
+    bg: "#020617",
+    card: "#0f172a",
+    text: "#e5e7eb",
+    muted: "#94a3b8"
+  },
+
+  red: {
+    primary: "#dc2626",
+    accent: "#f87171",
+    bg: "#0f0202",
+    card: "#1f0a0a",
+    text: "#fee2e2",
+    muted: "#fca5a5"
+  },
+
+  yellow: {
+    primary: "#eab308",
+    accent: "#fde047",
+    bg: "#0f0a02",
+    card: "#1f1a0a",
+    text: "#fef9c3",
+    muted: "#fde68a"
+  },
+
+  green: {
+    primary: "#16a34a",
+    accent: "#22c55e",
+    bg: "#020f06",
+    card: "#0a1f12",
+    text: "#dcfce7",
+    muted: "#86efac"
+  },
+
+  teal: {
+    primary: "#0d9488",
+    accent: "#5eead4",
+    bg: "#020f0e",
+    card: "#0a1f1e",
+    text: "#ccfbf1",
+    muted: "#5eead4"
+  },
+
+  brown: {
+    primary: "#92400e",
+    accent: "#fbbf24",
+    bg: "#0f0802",
+    card: "#1f1208",
+    text: "#fef3c7",
+    muted: "#fcd34d"
+  },
+
+  purple: {
+    primary: "#7c3aed",
+    accent: "#c4b5fd",
+    bg: "#05020f",
+    card: "#120a1f",
+    text: "#ede9fe",
+    muted: "#c4b5fd"
+  },
+
+  gold: {
+    primary: "#b45309",
+    accent: "#facc15",
+    bg: "#0f0902",
+    card: "#1f1408",
+    text: "#fef3c7",
+    muted: "#fde68a"
+  }
+};
+
+function applyTheme(name){
+
+  const t = themes[name] || themes.blue;
+
+  const root = document.documentElement;
+
+  root.style.setProperty("--primary", t.primary);
+  root.style.setProperty("--accent", t.accent);
+  root.style.setProperty("--bg", t.bg);
+  root.style.setProperty("--card", t.card);
+
+  if(t.text){
+    root.style.setProperty("--text", t.text);
+    root.style.setProperty("--muted", t.muted);
+  }
+
+  // ✅ ADD THIS
+  document.body.setAttribute("data-theme", name);
+
+  localStorage.setItem("theme", name);
+}
+  // Populate settings UI
+  itemsPerPageSelect.value = appSettings.finance.itemsPerPage;
+  openingBalanceInput.value = appSettings.finance.openingBalance || 0;
+  fyStartMonthSelect.value = appSettings.finance.financialYearStartMonth || 0;
+  openingBalanceModeSelect.value = appSettings.finance.openingBalanceMode || "financialYear";
+
+  function updateOpeningBalanceUI() {
+    manualOpeningBalanceWrap.style.display =
+      openingBalanceModeSelect.value === "manual" ? "block" : "none";
+  }
+  updateOpeningBalanceUI();
+
+  openingBalanceModeSelect.onchange = () => {
+    updateOpeningBalanceUI();
+  };
+
+  window.saveSettings = () => {
+    applyTheme(themeSelect.value);
+    appSettings.finance.itemsPerPage = Number(itemsPerPageSelect.value) || 10;
+    appSettings.finance.openingBalanceMode = openingBalanceModeSelect.value;
+    appSettings.finance.openingBalance =
+      openingBalanceModeSelect.value === "manual" ? Number(openingBalanceInput.value) || 0 : 0;
+    appSettings.finance.financialYearStartMonth = Number(fyStartMonthSelect.value) || 0;
+
+    localStorage.setItem("appSettings", JSON.stringify(appSettings));
+    perPage = appSettings.finance.itemsPerPage;
+    alert("Settings saved ✅");
+    renderTransactions();
+  };
+
+  window.resetSettings = () => {
+    if(!confirm("Reset all settings to default?")) return;
+    localStorage.removeItem("appSettings");
+    location.reload();
+  };
+
+// Load saved theme
+const savedTheme = localStorage.getItem("theme") || "blue";
+applyTheme(savedTheme);
+
+if(themeSelect){
+  themeSelect.value = savedTheme;
+}
+
+/* =================== CHARTS =================== */
+
+let incomeExpenseChart = null;
+let monthlyChart = null;
+
+window.loadCharts = () => {
+
+  // Destroy old charts (avoid duplicates)
+  if(incomeExpenseChart) incomeExpenseChart.destroy();
+  if(monthlyChart) monthlyChart.destroy();
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  const months = {};
+
+  records.forEach(r => {
+
+    const d = new Date(r.date);
+    const m = d.getFullYear() + "-" + (d.getMonth() + 1);
+
+    if(!months[m]){
+      months[m] = { income:0, expense:0 };
+    }
+
+    if(r.type === "Income"){
+      totalIncome += r.amount;
+      months[m].income += r.amount;
+    }else{
+      totalExpense += r.amount;
+      months[m].expense += r.amount;
+    }
+
+  });
+
+  /* ===== Income vs Expense Pie ===== */
+
+  const ctx1 = document
+    .getElementById("incomeExpenseChart")
+    .getContext("2d");
+
+  incomeExpenseChart = new Chart(ctx1, {
+    type: "pie",
+    data: {
+      labels: ["Income", "Expenses"],
+      datasets: [{
+        data: [totalIncome, totalExpense],
+        backgroundColor: ["#22c55e", "#ef4444"]
+      }]
+    },
+    options: {
+      responsive: true
+    }
+  });
+
+
+  /* ===== Monthly Trend Line ===== */
+
+  const labels = Object.keys(months).sort();
+
+  const incomeData = labels.map(m => months[m].income);
+  const expenseData = labels.map(m => months[m].expense);
+
+  const ctx2 = document
+    .getElementById("monthlyChart")
+    .getContext("2d");
+
+  monthlyChart = new Chart(ctx2, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+
+        {
+          label: "Income",
+          data: incomeData,
+          borderColor: "#22c55e",
+          fill: false
+        },
+
+        {
+          label: "Expenses",
+          data: expenseData,
+          borderColor: "#ef4444",
+          fill: false
+        }
+
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+};
+
+function disableButton(btn, loadingText){
+
+  const originalText = btn.textContent;
+
+  // Disable button
+  btn.disabled = true;
+  btn.textContent = loadingText;
+
+  // Re-enable after 2 seconds
+  setTimeout(()=>{
+    btn.disabled = false;
+    btn.textContent = originalText;
+  },2000);
+}
+})();
+</script>
 </body>
 </html>
