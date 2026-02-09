@@ -1,1 +1,157 @@
-# brm-finance
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>BRM Finance</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      margin:0;
+      background:#f1f5f9;
+    }
+
+    header{
+      background:#2563eb;
+      color:white;
+      padding:15px;
+      text-align:center;
+      font-size:20px;
+    }
+
+    .box{
+      background:white;
+      margin:15px;
+      padding:15px;
+      border-radius:10px;
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      margin:5px 0;
+      border:none;
+      border-radius:6px;
+      background:#2563eb;
+      color:white;
+      font-size:16px;
+    }
+
+    button:active{
+      opacity:0.8;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>BRM Finance App</header>
+
+<div class="box">
+
+  <button onclick="exportPDF()">Export PDF</button>
+  <button onclick="exportExcel()">Export Excel</button>
+  <button onclick="showChart()">Show Chart</button>
+
+  <div id="chartBox"></div>
+
+</div>
+
+
+<!-- Libraries -->
+<script src="libs/xlsx.full.min.js"></script>
+<script src="libs/jspdf.umd.min.js"></script>
+<script src="libs/jspdf.plugin.autotable.min.js"></script>
+<script src="libs/FileSaver.min.js"></script>
+<script src="libs/chart.min.js"></script>
+
+
+<script>
+
+/* Sample Data */
+let data = [
+  {date:"2026-02-01", name:"Offering", amount:5000, type:"Income"},
+  {date:"2026-02-02", name:"Tithe", amount:3000, type:"Income"},
+  {date:"2026-02-03", name:"Electricity", amount:1500, type:"Expense"}
+];
+
+
+/* PDF */
+function exportPDF(){
+
+  const { jsPDF } = window.jspdf;
+
+  let doc = new jsPDF();
+
+  doc.text("BRM Finance Report", 14, 15);
+
+  let rows = data.map(d=>[
+    d.date,d.name,d.amount,d.type
+  ]);
+
+  doc.autoTable({
+    head:[["Date","Name","Amount","Type"]],
+    body:rows,
+    startY:25
+  });
+
+  doc.save("report.pdf");
+}
+
+
+/* Excel */
+function exportExcel(){
+
+  let ws = XLSX.utils.json_to_sheet(data);
+
+  let wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws,"Report");
+
+  XLSX.writeFile(wb,"report.xlsx");
+}
+
+
+/* Chart */
+function showChart(){
+
+  let income = 0;
+  let expense = 0;
+
+  data.forEach(d=>{
+    if(d.type==="Income") income+=d.amount;
+    else expense+=d.amount;
+  });
+
+  document.getElementById("chartBox").innerHTML =
+    `<canvas id="chart"></canvas>`;
+
+  let ctx = document.getElementById("chart");
+
+  new Chart(ctx,{
+    type:"pie",
+    data:{
+      labels:["Income","Expense"],
+      datasets:[{
+        data:[income,expense]
+      }]
+    }
+  });
+
+}
+
+
+/* Service Worker */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
+}
+
+</script>
+
+</body>
+</html>
